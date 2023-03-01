@@ -1,7 +1,9 @@
 package com.tom.storagemod.item;
 
-import java.util.List;
-
+import com.tom.storagemod.Config;
+import com.tom.storagemod.StorageMod;
+import com.tom.storagemod.StorageTags;
+import com.tom.storagemod.proxy.ClientProxy;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,11 +15,10 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.BlockEvent;
 
-import com.tom.storagemod.Config;
-import com.tom.storagemod.StorageMod;
-import com.tom.storagemod.StorageTags;
-import com.tom.storagemod.proxy.ClientProxy;
+import java.util.List;
 
 public class ItemWirelessTerminal extends Item implements WirelessTerminal {
 
@@ -36,6 +37,12 @@ public class ItemWirelessTerminal extends Item implements WirelessTerminal {
 		BlockRayTraceResult lookingAt = (BlockRayTraceResult) playerIn.pick(Config.wirelessRange, 0f, true);
 		BlockState state = worldIn.getBlockState(lookingAt.getBlockPos());
 		if(StorageTags.REMOTE_ACTIVATE.contains(state.getBlock())) {
+			// Post the block break event
+			BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(playerIn.level, lookingAt.getBlockPos(), state, playerIn);
+			MinecraftForge.EVENT_BUS.post(event);
+			if (event.isCanceled()) {
+				return ActionResult.fail(playerIn.getItemInHand(handIn));
+			}
 			ActionResultType r = state.use(worldIn, playerIn, handIn, lookingAt);
 			return new ActionResult<>(r, playerIn.getItemInHand(handIn));
 		} else {
